@@ -12,7 +12,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.apple.eawt.Application;
 import com.nilhcem.fakesmtp.core.ArgsHandler;
 import com.nilhcem.fakesmtp.core.Configuration;
 import com.nilhcem.fakesmtp.core.exception.UncaughtExceptionHandler;
@@ -77,7 +76,18 @@ public final class FakeSMTP {
 					try {
 						URL envelopeImage = getClass().getResource(Configuration.INSTANCE.get("application.icon.path"));
 						if (envelopeImage != null) {
-							Application.getApplication().setDockIconImage(Toolkit.getDefaultToolkit().getImage(envelopeImage));
+							try {
+								if (System.getProperty("java.version", "1.6").startsWith("1.")) { // 1.8-
+									com.apple.eawt.Application.getApplication().setDockIconImage(Toolkit.getDefaultToolkit().getImage(envelopeImage));
+								} else { // 9.x, 10.x
+									java.awt.Image image = Toolkit.getDefaultToolkit().getImage(envelopeImage);
+									if (image != null) {
+										java.awt.Taskbar.getTaskbar().setIconImage(image);
+									}
+								}
+							} catch (Throwable ex) {
+								LOGGER.warn("Error: {} ", ex);
+							}
 						}
 					} catch (RuntimeException e) {
 						LOGGER.debug("Error: {} - This is probably because we run on a non-Mac platform and these components are not implemented", e.getMessage());
